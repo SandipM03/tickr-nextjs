@@ -16,7 +16,7 @@ const ticketSchema = new mongoose.Schema({
     },
     createdBy:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"User"  
+        ref:"User"
     },
     assignedTo:{
         type:mongoose.Schema.Types.ObjectId,
