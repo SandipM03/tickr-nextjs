@@ -100,18 +100,31 @@ const logout=async(req:authenticateRequest, res:Response)=>{
 //get all user Admin only
 const getAllUsers = async (req: authenticateRequest, res: Response) => {
     try {
-        if (
-            !req.user ||
-            (typeof req.user === "string" || (req.user as JwtPayload).role !== "admin")
-        ) {
+        if (!req.user || (typeof req.user === "string" || (req.user as JwtPayload).role !== "admin")) {
             const response = new ApiResponse(403, null, "Forbidden");
             return res.status(403).json(response);
         }
-        const users = await User.find();
+        const users = await User.find({ role: 'user' });
         const response = new ApiResponse(200, users);
         return res.status(200).json(response);
     } catch (error) {
         const response = new ApiError(500, "Internal Server Error");
         return res.status(500).json(response);
+    }
+}
+
+//get all users & moderators
+const getAllModerators= async (req:authenticateRequest, res:Response)=>{
+    try {
+      if(!req.user || (typeof req.user === 'string' || (req.user as JwtPayload).role !== 'admin')){
+        const response= new ApiResponse(403, null, "Forbidden")
+        return res.status(403).json(response)
+      }
+      const moderators = await User.find({ role: 'moderator' });
+      const response = new ApiResponse(200, moderators);
+      return res.status(200).json(response);
+    } catch (error) {
+        const response= new ApiError(500, "Internal Server Error")
+        return res.status(500).json(response)
     }
 }
