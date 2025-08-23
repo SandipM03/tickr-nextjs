@@ -128,3 +128,58 @@ const getAllModerators= async (req:authenticateRequest, res:Response)=>{
         return res.status(500).json(response)
     }
 }
+//promote to moderator from user
+
+const promoteToModerator= async(req:authenticateRequest, res:Response)=>{
+    try {
+        const {userId}= req.params;
+        const { skills = [] } = req.body;
+        const user = await User.findById(userId);
+        if(!user){
+            const response= new ApiResponse(400, null, "User ID is required");
+            return res.status(404).json(response);
+        }
+        if (user.role== 'admin' || user.role== 'moderator'){
+            const response= new ApiResponse(400, null, "User is already a moderator or admin");
+            return res.status(400).json(response);
+        }
+        const updatedUser= await User.findByIdAndUpdate(userId, 
+            {role: 'moderator', skills: skills.length > 0 ? skills : user.skills }, 
+            {new: true,select: '-password'}
+        );
+
+        const response = new ApiResponse(200, updatedUser);
+        return res.status(200).json({...response, message: "User promoted to moderator successfully"});
+    } catch (error) {
+        const response= new ApiError(500, "Internal Server Error")
+        return res.status(500).json(response)
+    }
+}
+
+const updateUserSkills= async(req:authenticateRequest, res:Response)=>{
+    try {
+        const {userId}=req.params;
+        const {skills=[]}=req.body;
+        const user= await User.findById(userId);
+        if(!user){
+            return res.status(404).json({ error: "User not found" });
+        }
+        if(!skills || Array.isArray(skills)=== false){
+            return res.status(400).json({
+                error: "Skills must be provided as an array"
+            });
+        }
+        if(user.role !== 'admin'){
+            return res.status(403).json({ error: "Only admins can update user skills" });
+        }
+        const updatedSkills= await User.findByIdAndUpdate(
+            userId,
+            { skills },
+            { new: true , select:-'-password'}
+        )
+        return res.status(200).json({message:'User skills updated successfully', data: updatedSkills})
+    } catch (error) {
+        const response= new ApiError(500, "Internal Server Error")
+        return res.status(500).json(response)
+    }
+}
