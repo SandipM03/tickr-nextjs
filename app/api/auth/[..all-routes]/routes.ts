@@ -5,6 +5,7 @@ import { ApiResponse } from "@/lib/utils/apiResponse";
 import User from "@/models/user"
 import bcrypt from 'bcrypt';
 import {Request, Response} from 'express'
+import { Amiri_Quran } from "next/font/google";
 
 interface authenticateRequest extends Request {
     user?: string | JwtPayload;
@@ -113,21 +114,28 @@ const getAllUsers = async (req: authenticateRequest, res: Response) => {
     }
 }
 
-//get all users & moderators
-const getAllModerators= async (req:authenticateRequest, res:Response)=>{
+//get all by role
+const getUserByRole= async(req:authenticateRequest, res:Response)=>{
     try {
-      if(!req.user || (typeof req.user === 'string' || (req.user as JwtPayload).role !== 'admin')){
-        const response= new ApiResponse(403, null, "Forbidden")
-        return res.status(403).json(response)
-      }
-      const moderators = await User.find({ role: 'moderator' });
-      const response = new ApiResponse(200, moderators);
-      return res.status(200).json(response);
+        const {role}= req.params;
+        if(!['user','moderator'].includes(role)){
+            return res
+            .status(400).json({
+                error: "Invalid role"
+            })
+        }
+        const users=  await User.find({role})
+                .select('-password')
+                .sort({createdAt:-1});
+        const response= new ApiResponse(200, users);
+        return res.status(200).json(response);
     } catch (error) {
-        const response= new ApiError(500, "Internal Server Error")
-        return res.status(500).json(response)
+        const response= new ApiError(500, "Internal Server Error");
+        return res.status(500).json(response);
     }
+
 }
+
 //promote to moderator from user
 
 const promoteToModerator= async(req:authenticateRequest, res:Response)=>{
